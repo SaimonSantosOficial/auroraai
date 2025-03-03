@@ -62,9 +62,7 @@ function displayMessage(text, type, isStatus = false) {
     messageDiv.classList.add('message', type === 'user' ? 'user-message' : 'ai-message');
     if (isStatus) {
         messageDiv.classList.add('status-message');
-        messageDiv.style.color = '#888'; // Cor mais suave para mensagens de status
-        messageDiv.style.fontStyle = 'italic';
-        messageDiv.textContent = text; // Status não usa Markdown
+        messageDiv.textContent = text; // Status usa texto puro com estilo definido no CSS
     } else if (type === 'ai') {
         console.log('Texto da IA antes da formatação:', text);
         const formattedText = formatWhatsAppText(text);
