@@ -41,32 +41,48 @@ const deleteBtn = document.getElementById('deleteBtn');
 const backBtn = document.getElementById('backBtn');
 const agentTitle = document.getElementById('agentTitle');
 const agentAvatarDisplay = document.getElementById('agentAvatarDisplay');
+const typingIndicator = document.getElementById('typingIndicator');
 
 let currentChatRef = null;
 let currentAgentId = null;
 
-// Função para formatar texto no estilo WhatsApp com quebras de linha
+// Função para formatar texto com Markdown apenas para blocos de código
 function formatWhatsAppText(text) {
-    text = text.replace(/\n/g, '<br>');
-    text = text.replace(/\*([^*]+)\*/g, '<strong>$1</strong>');
-    text = text.replace(/_([^_]+)_/g, '<em>$1</em>');
-    text = text.replace(/~([^~]+)~/g, '<del>$1</del>');
+    // Processa blocos de código entre ```
     text = text.replace(/```([^`]+)```/g, '<code>$1</code>');
+    // Substitui quebras de linha por <br>, mas não aplica outros Markdowns
+    text = text.replace(/\n/g, '<br>');
     return text;
 }
 
 // Exibir mensagem no chat
-function displayMessage(text, type) {
+function displayMessage(text, type, isStatus = false) {
     if (!text || typeof text !== 'string') return; // Evita mensagens inválidas
     const messageDiv = document.createElement('div');
     messageDiv.classList.add('message', type === 'user' ? 'user-message' : 'ai-message');
-    if (type === 'ai') {
-        messageDiv.innerHTML = formatWhatsAppText(text);
+    if (isStatus) {
+        messageDiv.classList.add('status-message');
+        messageDiv.style.color = '#888'; // Cor mais suave para mensagens de status
+        messageDiv.style.fontStyle = 'italic';
+        messageDiv.textContent = text; // Status não usa Markdown
+    } else if (type === 'ai') {
+        console.log('Texto da IA antes da formatação:', text);
+        const formattedText = formatWhatsAppText(text);
+        console.log('Texto da IA após formatação:', formattedText);
+        messageDiv.innerHTML = formattedText; // Aplica Markdown apenas para código
     } else {
-        messageDiv.textContent = text;
+        messageDiv.textContent = text; // Texto normal para mensagens do usuário
     }
     chatMessages.appendChild(messageDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
+    return messageDiv; // Retorna o elemento para remoção posterior
+}
+
+// Remover mensagem de status
+function removeStatusMessage(messageElement) {
+    if (messageElement && chatMessages.contains(messageElement)) {
+        chatMessages.removeChild(messageElement);
+    }
 }
 
 // Carregar grade de agentes
@@ -119,7 +135,8 @@ function createNewAgent() {
     newAgentRef.set({
         name: name,
         personality: personality,
-        avatar: avatar
+        avatar: avatar,
+        learnedContent: '' // Inicializa com conhecimento vazio
     });
     agentPopout.style.display = 'none';
     openAgentChat(agentId);
@@ -132,15 +149,26 @@ function cancelAgentCreation() {
 
 // Abrir o popout para editar agente
 function openEditAgentPopout() {
-    if (!currentAgentId) return;
+    console.log('Abrindo popout de edição para agente:', currentAgentId);
+    if (!currentAgentId) {
+        console.error('Nenhum agente selecionado para edição');
+        return;
+    }
     agentsRef.child(currentAgentId).once('value', (snapshot) => {
         const agentData = snapshot.val();
-        editAgentNameInput.value = agentData.name || '';
-        editAgentPersonalityInput.value = agentData.personality || '';
-        editAgentAvatarSelect.value = agentData.avatar || '🤖';
+        if (agentData) {
+            editAgentNameInput.value = agentData.name || '';
+            editAgentPersonalityInput.value = agentData.personality || '';
+            editAgentAvatarSelect.value = agentData.avatar || '🤖';
+            editAgentPopout.style.display = 'block';
+            toolsMenu.style.display = 'none';
+            console.log('Popout de edição aberto com dados:', agentData);
+        } else {
+            console.error('Dados do agente não encontrados:', currentAgentId);
+        }
+    }).catch((error) => {
+        console.error('Erro ao carregar dados do agente para edição:', error);
     });
-    editAgentPopout.style.display = 'block';
-    toolsMenu.style.display = 'none';
 }
 
 // Salvar edição do agente
@@ -152,6 +180,7 @@ function saveAgentEdits() {
         alert('Por favor, preencha o nome e a personalidade do agente.');
         return;
     }
+    console.log('Salvando edições do agente:', { name, personality, avatar });
     agentsRef.child(currentAgentId).update({
         name: name,
         personality: personality,
@@ -160,11 +189,15 @@ function saveAgentEdits() {
         agentTitle.textContent = name;
         agentAvatarDisplay.textContent = avatar;
         editAgentPopout.style.display = 'none';
+        console.log('Agente atualizado com sucesso');
+    }).catch((error) => {
+        console.error('Erro ao salvar edições do agente:', error);
     });
 }
 
 // Cancelar edição do agente
 function cancelEditAgent() {
+    console.log('Cancelando edição do agente');
     editAgentPopout.style.display = 'none';
 }
 
@@ -216,7 +249,7 @@ function loadAgentMessages() {
     });
 }
 
-// Editar o agente (substitui renameAgent)
+// Editar o agente
 function editAgent() {
     openEditAgentPopout();
 }
@@ -235,23 +268,64 @@ function toggleToolsMenu() {
     toolsMenu.style.display = toolsMenu.style.display === 'block' ? 'none' : 'block';
 }
 
-// Enviar mensagem para o Gemini API com personalidade avançada do agente
+// Função para extrair conteúdo completo de um site usando Jina Reader
+async function extractContentFromLink(url) {
+    try {
+        const response = await fetch(`https://r.jina.ai/${url}`);
+        if (!response.ok) throw new Error('Erro ao acessar o link via Jina Reader');
+        return await response.text(); // Retorna o conteúdo completo
+    } catch (error) {
+        console.error('Erro ao extrair conteúdo do link:', error);
+        return `Não consegui acessar o conteúdo completo de ${url}. Pode ser uma restrição do site ou um erro na API de extração.`;
+    }
+}
+
+// Enviar mensagem para o Gemini API com personalidade avançada e aprendizado persistente
 async function sendMessageToAI(message) {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
         if (!currentChatRef) {
             reject(new Error('Nenhum agente selecionado'));
             return;
         }
+
+        // Exibir "Pensando..." inicialmente
+        let thinkingMessage = displayMessage('Pensando...', 'ai', true);
+
         agentsRef.child(currentAgentId).once('value', async (agentSnapshot) => {
             const agentData = agentSnapshot.val();
             const personality = agentData.personality || 'Neutro';
+            let learnedContent = agentData.learnedContent || '';
+
+            // Detectar URLs na mensagem usando regex
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            const urls = message.match(urlRegex) || [];
+
+            // Extrair e aprender conteúdo de cada URL encontrado
+            if (urls.length > 0) {
+                removeStatusMessage(thinkingMessage);
+                for (const url of urls) {
+                    // Exibir "Pesquisando..."
+                    const researchingMessage = displayMessage(`Pesquisando ${url}...`, 'ai', true);
+                    const content = await extractContentFromLink(url);
+                    removeStatusMessage(researchingMessage);
+
+                    // Exibir "Aprendendo..."
+                    const learningMessage = displayMessage(`Aprendendo com ${url}...`, 'ai', true);
+                    learnedContent += `\nConteúdo aprendido de ${url} em ${new Date().toISOString()}:\n${content}\n`;
+                    // Salvar o aprendizado no Firebase
+                    await agentsRef.child(currentAgentId).update({ learnedContent });
+                    removeStatusMessage(learningMessage);
+                }
+                // Re-exibir "Pensando..." após processar links
+                thinkingMessage = displayMessage('Pensando...', 'ai', true);
+            }
 
             currentChatRef.once('value', async (snapshot) => {
                 const conversation = [
                     {
                         role: 'user',
                         parts: [{
-                            text: `Você é um agente AI chamado ${agentData.name || 'Agente'} com a personalidade definida como: ${personality}. Essa personalidade é sua base de conhecimento e comportamento. Responda a todas as mensagens refletindo essa personalidade de forma consistente, como se fosse um especialista em tudo dentro desse contexto.`
+                            text: `Você é um agente AI chamado ${agentData.name || 'Agente'} com a personalidade definida como: ${personality}. Use Markdown apenas para formatar blocos de código entre \`\`\` (ex.: \`\`\`código\`\`\`), mantendo o resto do texto como texto normal sem formatação adicional como negrito ou itálico. Você aprendeu o seguinte conteúdo de sites visitados: ${learnedContent || 'Nenhum conteúdo aprendido ainda.'}. Use esse conhecimento e sua personalidade para responder a todas as mensagens de forma consistente, como um especialista em tudo que você aprendeu.`
                         }]
                     }
                 ];
@@ -281,14 +355,18 @@ async function sendMessageToAI(message) {
                         throw new Error(`Erro na API: ${response.status} - ${errorText}`);
                     }
                     const data = await response.json();
-                    console.log('Resposta da API Gemini:', data);
+                    console.log('Resposta da API Gemini (crua):', data.candidates[0].content.parts[0].text);
                     if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0]) {
                         throw new Error('Resposta da API inválida: Nenhum conteúdo retornado');
                     }
+                    removeStatusMessage(thinkingMessage);
                     resolve(data.candidates[0].content.parts[0].text);
                 } catch (error) {
                     console.error('Erro ao enviar mensagem para Gemini:', error);
+                    removeStatusMessage(thinkingMessage);
                     reject(error);
+                } finally {
+                    typingIndicator.style.display = 'none'; // Esconde o indicador de digitação
                 }
             });
         });
@@ -309,6 +387,7 @@ async function handleSendMessage() {
     } catch (error) {
         console.error('Falha ao obter resposta da IA:', error);
         displayMessage('Erro: Não foi possível obter resposta da IA.', 'ai');
+        typingIndicator.style.display = 'none'; // Esconde o indicador em caso de erro
     }
 }
 

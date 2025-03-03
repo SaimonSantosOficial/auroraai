@@ -2,26 +2,54 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Orbitron', sans-serif;
 }
 
 body {
-    background: linear-gradient(135deg, #d8e5d5, #e5ddd5);
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
     height: 100vh;
     width: 100vw;
     overflow: hidden;
     margin: 0;
-    color: #111b21;
+    color: #e0e0e0;
 }
 
 /* Container Principal */
 .app-container {
     width: 100%;
     height: 100vh;
-    background: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
-    border-radius: 10px;
+    position: relative;
     overflow: hidden;
+    background: rgba(0, 0, 0, 0.7);
+    box-shadow: 0 0 60px rgba(0, 255, 255, 0.2);
+}
+
+/* Partículas de Fundo */
+.background-particles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
+    opacity: 0.2;
+    animation: particleFlow 20s linear infinite;
+    z-index: 1;
+}
+
+.chat-particles {
+    background: url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
+    animation: particleFlowReverse 20s linear infinite;
+}
+
+@keyframes particleFlow {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-100%); }
+}
+
+@keyframes particleFlowReverse {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(0); }
 }
 
 /* Tela de Agentes */
@@ -30,73 +58,87 @@ body {
     height: 100vh;
     display: flex;
     flex-direction: column;
+    position: relative;
+    z-index: 2;
 }
 
 .agents-header {
-    padding: 15px 20px;
-    background: linear-gradient(90deg, #075e54, #128c7e);
-    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    padding: 20px;
+    background: linear-gradient(90deg, #00d4ff, #ff00ff);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.3);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    height: 70px;
+    height: 80px;
     position: fixed;
     top: 0;
     width: 100%;
     z-index: 10;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
+    box-shadow: 0 4px 30px rgba(0, 255, 255, 0.5);
 }
 
-.agents-header h1 {
-    font-size: 22px;
+.neon-text {
+    font-size: 28px;
     font-weight: 700;
     color: #fff;
-    text-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+    text-shadow: 0 0 10px #00d4ff, 0 0 20px #ff00ff, 0 0 30px #00d4ff;
+    animation: neonGlow 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes neonGlow {
+    from { text-shadow: 0 0 5px #00d4ff, 0 0 10px #ff00ff, 0 0 15px #00d4ff; }
+    to { text-shadow: 0 0 10px #ff00ff, 0 0 20px #00d4ff, 0 0 30px #ff00ff; }
 }
 
 .new-agent-btn {
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid #00d4ff;
     border-radius: 50%;
-    font-size: 22px;
+    font-size: 24px;
     cursor: pointer;
     color: #fff;
-    width: 45px;
-    height: 45px;
+    width: 50px;
+    height: 50px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .new-agent-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: scale(1.1);
+    transform: scale(1.2) rotate(90deg);
+    box-shadow: 0 0 20px #00d4ff;
 }
 
 .agent-popout,
 .edit-agent-popout {
     position: absolute;
-    right: 20px;
-    top: 75px;
-    background: linear-gradient(135deg, #fff, #f0f2f5);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    right: 30px;
+    top: 90px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.8));
+    border: 1px solid #00d4ff;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 10px 40px rgba(0, 255, 255, 0.3);
     z-index: 15;
-    width: 300px;
-    animation: slideIn 0.3s ease-in-out;
+    width: 320px;
+    backdrop-filter: blur(10px);
+    animation: popoutAppear 0.5s ease-out;
+}
+
+@keyframes popoutAppear {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
 }
 
 .agent-popout h2,
 .edit-agent-popout h2 {
-    font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 15px;
-    color: #111b21;
+    font-size: 20px;
+    font-weight: 700;
+    color: #00d4ff;
+    margin-bottom: 20px;
+    text-shadow: 0 0 5px #00d4ff;
 }
 
 .agent-popout input,
@@ -106,26 +148,39 @@ body {
 .edit-agent-popout textarea,
 .edit-agent-popout select {
     width: 100%;
-    padding: 10px;
+    padding: 12px;
     margin-bottom: 15px;
-    border: 1px solid #d0d0d0;
-    border-radius: 6px;
+    border: 1px solid #ff00ff;
+    border-radius: 8px;
     font-size: 14px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #e0e0e0;
     outline: none;
+    transition: border-color 0.3s ease;
+}
+
+.agent-popout input:focus,
+.agent-popout textarea:focus,
+.agent-popout select:focus,
+.edit-agent-popout input:focus,
+.edit-agent-popout textarea:focus,
+.edit-agent-popout select:focus {
+    border-color: #00d4ff;
+    box-shadow: 0 0 10px #00d4ff;
 }
 
 .agent-popout textarea,
 .edit-agent-popout textarea {
-    height: 80px;
+    height: 90px;
     resize: none;
 }
 
 .agent-popout button,
 .edit-agent-popout button {
     width: 48%;
-    padding: 10px;
+    padding: 12px;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
@@ -134,87 +189,95 @@ body {
 
 .agent-popout #createAgentBtn,
 .edit-agent-popout #saveAgentBtn {
-    background: linear-gradient(135deg, #25d366, #128c7e);
+    background: linear-gradient(135deg, #00d4ff, #ff00ff);
     color: #fff;
     margin-right: 4%;
 }
 
 .agent-popout #createAgentBtn:hover,
 .edit-agent-popout #saveAgentBtn:hover {
-    background: linear-gradient(135deg, #128c7e, #25d366);
-    transform: translateY(-2px);
+    transform: scale(1.1);
+    box-shadow: 0 0 20px #00d4ff;
 }
 
 .agent-popout #cancelAgentBtn,
 .edit-agent-popout #cancelEditAgentBtn {
-    background: #e74c3c;
+    background: #ff0066;
     color: #fff;
 }
 
 .agent-popout #cancelAgentBtn:hover,
 .edit-agent-popout #cancelEditAgentBtn:hover {
-    background: #c0392b;
-    transform: translateY(-2px);
+    transform: scale(1.1);
+    box-shadow: 0 0 20px #ff0066;
 }
 
 .agents-grid {
-    padding: 20px 15px;
+    padding: 30px;
     overflow-x: auto;
     overflow-y: hidden;
-    margin-top: 70px;
-    background: url('https://www.transparenttextures.com/patterns/paper-fibers.png') repeat, #e5ddd5;
-    background-blend-mode: overlay;
+    margin-top: 80px;
+    background: rgba(0, 0, 0, 0.5);
     display: flex;
-    gap: 15px;
+    gap: 20px;
     scrollbar-width: thin;
-    scrollbar-color: #25d366 #e5ddd5;
+    scrollbar-color: #00d4ff rgba(255, 255, 255, 0.1);
+    z-index: 2;
+    perspective: 1000px;
 }
 
 .agents-grid::-webkit-scrollbar {
-    height: 8px;
+    height: 10px;
 }
 
 .agents-grid::-webkit-scrollbar-thumb {
-    background: linear-gradient(90deg, #25d366, #075e54);
+    background: linear-gradient(90deg, #00d4ff, #ff00ff);
     border-radius: 10px;
 }
 
 .agents-grid::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .agent-item {
-    padding: 15px;
-    background: linear-gradient(135deg, #fff, #f9f9f9);
-    border-radius: 10px;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.8));
+    border: 2px solid #00d4ff;
+    border-radius: 15px;
     cursor: pointer;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s ease;
-    min-width: 120px;
-    max-width: 150px;
-    height: 150px;
+    gap: 15px;
+    box-shadow: 0 5px 20px rgba(0, 255, 255, 0.3);
+    transition: transform 0.5s ease, box-shadow 0.5s ease;
+    min-width: 150px;
+    max-width: 180px;
+    height: 200px;
+    transform: rotateY(10deg);
 }
 
 .agent-item:hover {
-    background: linear-gradient(135deg, #f9f9f9, #f0f0f0);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transform: rotateY(0deg) scale(1.1);
+    box-shadow: 0 10px 40px rgba(0, 255, 255, 0.5);
 }
 
 .agent-item span {
-    font-size: 40px;
+    font-size: 50px;
+    transition: transform 0.3s ease;
+}
+
+.agent-item:hover span {
+    transform: scale(1.2) rotate(360deg);
 }
 
 .agent-item h2 {
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 500;
-    color: #111b21;
+    color: #e0e0e0;
     text-align: center;
     word-wrap: break-word;
+    text-shadow: 0 0 5px #ff00ff;
 }
 
 /* Tela de Chat */
@@ -223,114 +286,120 @@ body {
     height: 100vh;
     display: flex;
     flex-direction: column;
+    position: relative;
+    z-index: 2;
 }
 
 .chat-header {
-    padding: 15px 20px;
-    background: linear-gradient(90deg, #075e54, #128c7e);
-    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    padding: 20px;
+    background: linear-gradient(90deg, #ff00ff, #00d4ff);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.3);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    height: 70px;
+    height: 80px;
     position: fixed;
     top: 0;
     width: 100%;
     z-index: 10;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
+    box-shadow: 0 4px 30px rgba(255, 0, 255, 0.5);
 }
 
 .agent-info {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 15px;
 }
 
 #agentAvatarDisplay {
-    font-size: 24px;
+    font-size: 28px;
+    animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
 }
 
 .chat-header h1 {
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 700;
     color: #fff;
-    text-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+    text-shadow: 0 0 10px #ff00ff;
 }
 
 .back-btn {
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid #ff00ff;
     border-radius: 50%;
-    font-size: 22px;
+    font-size: 24px;
     cursor: pointer;
     color: #fff;
-    width: 45px;
-    height: 45px;
+    width: 50px;
+    height: 50px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .back-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: scale(1.1);
+    transform: scale(1.2) rotate(-90deg);
+    box-shadow: 0 0 20px #ff00ff;
 }
 
 .tools-btn {
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid #00d4ff;
     border-radius: 50%;
-    font-size: 22px;
+    font-size: 24px;
     cursor: pointer;
     color: #fff;
-    width: 45px;
-    height: 45px;
+    width: 50px;
+    height: 50px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .tools-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: scale(1.1);
+    transform: scale(1.2) rotate(90deg);
+    box-shadow: 0 0 20px #00d4ff;
 }
 
 .tools-menu {
     position: absolute;
-    right: 20px;
-    top: 75px;
-    background: linear-gradient(135deg, #fff, #f0f2f5);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    padding: 15px;
-    display: none;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    right: 30px;
+    top: 90px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.8));
+    border: 1px solid #ff00ff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(255, 0, 255, 0.3);
     z-index: 15;
-    animation: slideIn 0.3s ease-in-out;
+    backdrop-filter: blur(10px);
+    animation: popoutAppear 0.5s ease-out;
 }
 
 .tools-menu button {
     width: 100%;
-    padding: 10px 15px;
-    background: #fff;
-    border: none;
-    border-radius: 6px;
+    padding: 12px 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid #00d4ff;
+    border-radius: 8px;
     font-size: 15px;
     font-weight: 500;
-    color: #111b21;
+    color: #e0e0e0;
     cursor: pointer;
     text-align: left;
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
     gap: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    margin-bottom: 5px;
+    margin-bottom: 10px;
 }
 
 .tools-menu button i {
@@ -338,30 +407,77 @@ body {
 }
 
 .tools-menu button#editBtn i {
-    color: #3498db;
+    color: #00d4ff;
 }
 
 .tools-menu button#deleteBtn i {
-    color: #e74c3c;
+    color: #ff0066;
 }
 
 .tools-menu button:hover {
-    background: #f0f0f0;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateX(5px);
+    box-shadow: 0 0 15px #00d4ff;
 }
 
 .chat-messages {
-    padding: 25px 15px;
+    padding: 30px 20px;
     overflow-y: auto;
-    color: #111b21;
+    color: #e0e0e0;
     position: absolute;
-    top: 70px;
-    bottom: 70px;
+    top: 80px;
+    bottom: 80px;
     left: 0;
     right: 0;
-    background: url('https://www.transparenttextures.com/patterns/paper-fibers.png') repeat, #e5ddd5;
-    background-blend-mode: overlay;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 2;
+}
+
+.status-message {
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.3), rgba(255, 0, 255, 0.3));
+    border: 2px solid #00d4ff;
+    border-radius: 12px;
+    padding: 10px 15px;
+    margin-bottom: 15px;
+    max-width: 80%;
+    color: #fff;
+    text-align: center;
+    font-size: 14px;
+    font-style: normal;
+    text-shadow: 0 0 5px #ff00ff;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+    animation: pulseStatus 1.5s infinite ease-in-out, fadeInOut 0.5s ease-in-out;
+    position: relative;
+    overflow: hidden;
+}
+
+.status-message::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+    animation: glowRotate 4s linear infinite;
+    z-index: -1;
+}
+
+@keyframes pulseStatus {
+    0% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(1); opacity: 0.8; }
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; }
+    50% { opacity: 1; }
+    100% { opacity: 0.8; }
+}
+
+@keyframes glowRotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 .chat-footer {
@@ -369,34 +485,34 @@ body {
     bottom: 0;
     left: 0;
     width: 100%;
-    padding: 10px 15px;
+    padding: 15px 20px;
     display: flex;
-    gap: 10px;
-    background: linear-gradient(180deg, #f0f2f5, #e8ecef);
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
-    height: 70px;
-    z-index: 5;
+    gap: 15px;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.9));
+    border-top: 2px solid #ff00ff;
+    height: 80px;
+    z-index: 10;
     align-items: center;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 -4px 30px rgba(255, 0, 255, 0.5);
 }
 
 #messageInput {
     flex: 1;
-    padding: 12px 15px;
-    border: none;
+    padding: 15px;
+    border: 1px solid #00d4ff;
     border-radius: 25px;
-    background: #fff;
+    background: rgba(255, 255, 255, 0.05);
     resize: none;
     outline: none;
     font-size: 15px;
     height: 50px;
-    color: #111b21;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s ease;
+    color: #e0e0e0;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 #messageInput:focus {
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1), 0 0 5px rgba(7, 94, 84, 0.3);
+    border-color: #ff00ff;
+    box-shadow: 0 0 15px #ff00ff;
 }
 
 #messageInput::placeholder {
@@ -404,11 +520,11 @@ body {
 }
 
 #sendBtn {
-    padding: 12px;
-    background: linear-gradient(135deg, #25d366, #128c7e);
+    padding: 15px;
+    background: linear-gradient(135deg, #ff00ff, #00d4ff);
     border: none;
     border-radius: 50%;
-    color: white;
+    color: #fff;
     font-size: 18px;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -417,45 +533,44 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+    box-shadow: 0 4px 20px rgba(255, 0, 255, 0.5);
 }
 
 #sendBtn:hover {
-    background: linear-gradient(135deg, #128c7e, #25d366);
-    transform: scale(1.1);
-    box-shadow: 0 6px 20px rgba(37, 211, 102, 0.5);
+    transform: scale(1.2) rotate(45deg);
+    box-shadow: 0 6px 30px rgba(255, 0, 255, 0.7);
 }
 
 .chat-messages::-webkit-scrollbar {
-    width: 8px;
+    width: 10px;
 }
 
 .chat-messages::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #25d366, #075e54);
+    background: linear-gradient(180deg, #ff00ff, #00d4ff);
     border-radius: 10px;
 }
 
 .chat-messages::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .message {
-    margin-bottom: 12px;
-    padding: 12px 18px;
-    border-radius: 10px;
-    max-width: 75%;
+    margin-bottom: 15px;
+    padding: 15px 20px;
+    border-radius: 12px;
+    max-width: 80%;
     word-wrap: break-word;
     position: relative;
     font-size: 15px;
     line-height: 1.5;
     white-space: pre-wrap;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s ease;
+    box-shadow: 0 2px 15px rgba(0, 255, 255, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .message:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transform: translateY(-3px);
+    box-shadow: 0 4px 20px rgba(0, 255, 255, 0.4);
 }
 
 .message::after {
@@ -463,143 +578,104 @@ body {
     position: absolute;
     width: 0;
     height: 0;
-    border: 10px solid transparent;
+    border: 12px solid transparent;
 }
 
 .user-message {
-    background: linear-gradient(135deg, #dcf8c6, #c8f0b9);
-    color: #111b21;
+    background: linear-gradient(135deg, #00d4ff, #66e0ff);
+    color: #111;
     margin-left: auto;
 }
 
 .user-message::after {
-    border-left-color: #dcf8c6;
-    right: -10px;
+    border-left-color: #00d4ff;
+    right: -12px;
     top: 50%;
     transform: translateY(-50%);
 }
 
 .ai-message {
-    background: linear-gradient(135deg, #fff, #f9f9f9);
-    color: #111b21;
+    background: linear-gradient(135deg, #ff00ff, #ff66cc);
+    color: #fff;
     margin-right: auto;
 }
 
 .ai-message::after {
-    border-right-color: #fff;
-    left: -10px;
+    border-right-color: #ff00ff;
+    left: -12px;
     top: 50%;
     transform: translateY(-50%);
 }
 
-/* Animação para o menu */
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.ai-message code {
+    background: rgba(0, 0, 0, 0.5);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', Courier, monospace;
 }
 
 /* Ajustes para celular */
 @media (max-width: 768px) {
     .agents-header,
     .chat-header {
-        padding: 15px 20px;
-        height: 80px;
+        padding: 15px;
+        height: 90px;
     }
 
-    .agents-header h1,
+    .neon-text,
     .chat-header h1 {
-        font-size: 26px;
+        font-size: 22px;
     }
 
     .new-agent-btn,
     .tools-btn,
     .back-btn {
-        padding: 12px;
-        width: 50px;
-        height: 50px;
-    }
-
-    .new-agent-btn i,
-    .tools-btn i,
-    .back-btn i {
-        font-size: 24px;
+        width: 45px;
+        height: 45px;
     }
 
     .agent-popout,
     .edit-agent-popout {
-        right: 15px;
-        top: 85px;
+        right: 10px;
+        top: 100px;
         width: 90%;
         max-width: 300px;
     }
 
     .tools-menu {
-        right: 20px;
-        top: 85px;
-        padding: 15px;
-    }
-
-    .tools-menu button {
-        padding: 12px 15px;
-        font-size: 16px;
-    }
-
-    .tools-menu button i {
-        font-size: 20px;
+        right: 10px;
+        top: 100px;
     }
 
     .agents-grid {
-        padding: 30px 15px;
-        margin-top: 80px;
+        padding: 20px;
+        margin-top: 90px;
     }
 
     .agent-item {
-        padding: 20px;
-        min-width: 100px;
-        max-width: 120px;
-        height: 140px;
+        min-width: 120px;
+        max-width: 150px;
+        height: 180px;
     }
 
     .chat-messages {
-        padding: 30px 15px;
-        top: 80px;
-        bottom: 85px;
-    }
-
-    .message {
-        padding: 15px 20px;
-        font-size: 16px;
+        padding: 20px 15px;
+        top: 90px;
+        bottom: 90px;
     }
 
     .chat-footer {
-        padding: 15px 20px;
-        height: 85px;
+        padding: 10px 15px;
+        height: 90px;
     }
 
     #messageInput {
-        padding: 15px 20px;
-        font-size: 16px;
-        height: 55px;
+        padding: 12px;
+        height: 50px;
     }
 
     #sendBtn {
-        padding: 15px;
-        width: 55px;
-        height: 55px;
-    }
-
-    #sendBtn i {
-        font-size: 22px;
-    }
-
-    .chat-messages::-webkit-scrollbar,
-    .agents-grid::-webkit-scrollbar {
-        width: 10px;
+        width: 45px;
+        height: 45px;
     }
 }
