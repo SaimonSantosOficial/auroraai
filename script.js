@@ -46,10 +46,14 @@ const typingIndicator = document.getElementById('typingIndicator');
 let currentChatRef = null;
 let currentAgentId = null;
 
-// Função para formatar texto com Markdown apenas para blocos de código
+// Função para corrigir escaping de Markdown e formatar **, * e ```
 function formatWhatsAppText(text) {
-    // Processa blocos de código entre ```
-    text = text.replace(/```([^`]+)```/g, '<code>$1</code>');
+    // Remove escaping indesejado da API (ex.: ```código``` ao invés de \`código\`)
+    text = text.replace(/\\```/g, '```');
+    // Processa Markdown na ordem correta para evitar conflitos
+    text = text.replace(/```([^`]+)```/g, '<code>$1</code>'); // Blocos de código
+    text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>'); // Negrito
+    text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>'); // Itálico
     // Substitui quebras de linha por <br>, mas não aplica outros Markdowns
     text = text.replace(/\n/g, '<br>');
     return text;
@@ -64,10 +68,8 @@ function displayMessage(text, type, isStatus = false) {
         messageDiv.classList.add('status-message');
         messageDiv.textContent = text; // Status usa texto puro com estilo definido no CSS
     } else if (type === 'ai') {
-        console.log('Texto da IA antes da formatação:', text);
         const formattedText = formatWhatsAppText(text);
-        console.log('Texto da IA após formatação:', formattedText);
-        messageDiv.innerHTML = formattedText; // Aplica Markdown apenas para código
+        messageDiv.innerHTML = formattedText; // Aplica Markdown para **, * e ```
     } else {
         messageDiv.textContent = text; // Texto normal para mensagens do usuário
     }
@@ -147,11 +149,7 @@ function cancelAgentCreation() {
 
 // Abrir o popout para editar agente
 function openEditAgentPopout() {
-    console.log('Abrindo popout de edição para agente:', currentAgentId);
-    if (!currentAgentId) {
-        console.error('Nenhum agente selecionado para edição');
-        return;
-    }
+    if (!currentAgentId) return;
     agentsRef.child(currentAgentId).once('value', (snapshot) => {
         const agentData = snapshot.val();
         if (agentData) {
@@ -160,12 +158,7 @@ function openEditAgentPopout() {
             editAgentAvatarSelect.value = agentData.avatar || '🤖';
             editAgentPopout.style.display = 'block';
             toolsMenu.style.display = 'none';
-            console.log('Popout de edição aberto com dados:', agentData);
-        } else {
-            console.error('Dados do agente não encontrados:', currentAgentId);
         }
-    }).catch((error) => {
-        console.error('Erro ao carregar dados do agente para edição:', error);
     });
 }
 
@@ -178,7 +171,6 @@ function saveAgentEdits() {
         alert('Por favor, preencha o nome e a personalidade do agente.');
         return;
     }
-    console.log('Salvando edições do agente:', { name, personality, avatar });
     agentsRef.child(currentAgentId).update({
         name: name,
         personality: personality,
@@ -187,15 +179,11 @@ function saveAgentEdits() {
         agentTitle.textContent = name;
         agentAvatarDisplay.textContent = avatar;
         editAgentPopout.style.display = 'none';
-        console.log('Agente atualizado com sucesso');
-    }).catch((error) => {
-        console.error('Erro ao salvar edições do agente:', error);
     });
 }
 
 // Cancelar edição do agente
 function cancelEditAgent() {
-    console.log('Cancelando edição do agente');
     editAgentPopout.style.display = 'none';
 }
 
@@ -273,7 +261,6 @@ async function extractContentFromLink(url) {
         if (!response.ok) throw new Error('Erro ao acessar o link via Jina Reader');
         return await response.text(); // Retorna o conteúdo completo
     } catch (error) {
-        console.error('Erro ao extrair conteúdo do link:', error);
         return `Não consegui acessar o conteúdo completo de ${url}. Pode ser uma restrição do site ou um erro na API de extração.`;
     }
 }
@@ -323,7 +310,7 @@ async function sendMessageToAI(message) {
                     {
                         role: 'user',
                         parts: [{
-                            text: `Você é um agente AI chamado ${agentData.name || 'Agente'} com a personalidade definida como: ${personality}. Use Markdown apenas para formatar blocos de código entre \`\`\` (ex.: \`\`\`código\`\`\`), mantendo o resto do texto como texto normal sem formatação adicional como negrito ou itálico. Você aprendeu o seguinte conteúdo de sites visitados: ${learnedContent || 'Nenhum conteúdo aprendido ainda.'}. Use esse conhecimento e sua personalidade para responder a todas as mensagens de forma consistente, como um especialista em tudo que você aprendeu.`
+                            text: `Você é um agente AI chamado ${agentData.name || 'Agente'} com a personalidade definida como: ${personality}. Use Markdown para formatar blocos de código entre \`\`\` (ex.: \`\`\`código\`\`\`), negrito com ** (ex.: **texto**), e itálico com * (ex.: *texto*), mantendo o resto do texto como texto normal sem formatação adicional. Certifique-se de que os símbolos Markdown sejam retornados exatamente como \`\`\`, ** e * sem escaping ou alterações. Você aprendeu o seguinte conteúdo de sites visitados: ${learnedContent || 'Nenhum conteúdo aprendido ainda.'}. Use esse conhecimento e sua personalidade para responder a todas as mensagens de forma consistente, como um especialista em tudo que você aprendeu.`
                         }]
                     }
                 ];
@@ -339,7 +326,6 @@ async function sendMessageToAI(message) {
                 conversation.push({ role: 'user', parts: [{ text: message }] });
 
                 try {
-                    console.log('Enviando para API Gemini:', JSON.stringify({ contents: conversation }));
                     const response = await fetch(
                         'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyDrxydv0df-YvYWwMlnKLb0_6z1jByTzlw',
                         {
@@ -353,14 +339,12 @@ async function sendMessageToAI(message) {
                         throw new Error(`Erro na API: ${response.status} - ${errorText}`);
                     }
                     const data = await response.json();
-                    console.log('Resposta da API Gemini (crua):', data.candidates[0].content.parts[0].text);
                     if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0]) {
                         throw new Error('Resposta da API inválida: Nenhum conteúdo retornado');
                     }
                     removeStatusMessage(thinkingMessage);
                     resolve(data.candidates[0].content.parts[0].text);
                 } catch (error) {
-                    console.error('Erro ao enviar mensagem para Gemini:', error);
                     removeStatusMessage(thinkingMessage);
                     reject(error);
                 } finally {
@@ -383,7 +367,6 @@ async function handleSendMessage() {
         const aiResponse = await sendMessageToAI(message);
         await currentChatRef.push({ text: aiResponse, type: 'ai' });
     } catch (error) {
-        console.error('Falha ao obter resposta da IA:', error);
         displayMessage('Erro: Não foi possível obter resposta da IA.', 'ai');
         typingIndicator.style.display = 'none'; // Esconde o indicador em caso de erro
     }
