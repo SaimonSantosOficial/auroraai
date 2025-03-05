@@ -48,34 +48,31 @@ let currentAgentId = null;
 
 // Função para corrigir escaping de Markdown e formatar **, * e ```
 function formatWhatsAppText(text) {
-    // Remove escaping indesejado da API (ex.: ```código``` ao invés de \`código\`)
     text = text.replace(/\\```/g, '```');
-    // Processa Markdown na ordem correta para evitar conflitos
-    text = text.replace(/```([^`]+)```/g, '<code>$1</code>'); // Blocos de código
-    text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>'); // Negrito
-    text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>'); // Itálico
-    // Substitui quebras de linha por <br>, mas não aplica outros Markdowns
+    text = text.replace(/```([^`]+)```/g, '<code>$1</code>');
+    text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
     text = text.replace(/\n/g, '<br>');
     return text;
 }
 
 // Exibir mensagem no chat
 function displayMessage(text, type, isStatus = false) {
-    if (!text || typeof text !== 'string') return; // Evita mensagens inválidas
+    if (!text || typeof text !== 'string') return;
     const messageDiv = document.createElement('div');
     messageDiv.classList.add('message', type === 'user' ? 'user-message' : 'ai-message');
     if (isStatus) {
         messageDiv.classList.add('status-message');
-        messageDiv.textContent = text; // Status usa texto puro com estilo definido no CSS
+        messageDiv.textContent = text;
     } else if (type === 'ai') {
         const formattedText = formatWhatsAppText(text);
-        messageDiv.innerHTML = formattedText; // Aplica Markdown para **, * e ```
+        messageDiv.innerHTML = formattedText;
     } else {
-        messageDiv.textContent = text; // Texto normal para mensagens do usuário
+        messageDiv.textContent = text;
     }
     chatMessages.appendChild(messageDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
-    return messageDiv; // Retorna o elemento para remoção posterior
+    return messageDiv;
 }
 
 // Remover mensagem de status
@@ -85,13 +82,16 @@ function removeStatusMessage(messageElement) {
     }
 }
 
-// Carregar grade de agentes
+// Carregar grade de agentes com logs detalhados
 function loadAgents() {
+    console.log('Carregando agentes...');
     agentsGrid.innerHTML = '';
     agentsRef.once('value', (snapshot) => {
+        console.log('Dados recebidos do Firebase:', snapshot.val());
         if (!snapshot.exists()) {
+            console.log('Nenhum agente encontrado no Firebase.');
             const noAgents = document.createElement('p');
-            noAgents.textContent = 'Nenhum agente encontrado.';
+            noAgents.textContent = 'Nenhum amiguinho encontrado.';
             noAgents.style.textAlign = 'center';
             noAgents.style.color = '#888';
             noAgents.style.width = '100%';
@@ -101,20 +101,28 @@ function loadAgents() {
         snapshot.forEach((childSnapshot) => {
             const agentId = childSnapshot.key;
             const agentData = childSnapshot.val();
+            console.log(`Agente encontrado: ID=${agentId}, Nome=${agentData.name}, Avatar=${agentData.avatar}`);
             const agentItem = document.createElement('div');
             agentItem.classList.add('agent-item');
             agentItem.innerHTML = `
                 <span>${agentData.avatar || '🤖'}</span>
-                <h2>${agentData.name || `Agente ${agentId}`}</h2>
+                <h2>${agentData.name || `Amiguinho ${agentId}`}</h2>
             `;
-            agentItem.addEventListener('click', () => openAgentChat(agentId));
+            agentItem.addEventListener('click', () => {
+                console.log(`Clicado no agente com ID: ${agentId}`);
+                openAgentChat(agentId);
+            });
             agentsGrid.appendChild(agentItem);
         });
+    }).catch((error) => {
+        console.error('Erro ao carregar agentes:', error);
+        alert('Não consegui carregar os amiguinhos! Verifique sua conexão ou tente mais tarde.');
     });
 }
 
 // Abrir o popout para criar agente
 function openAgentPopout() {
+    console.log('Abrindo popout para criar agente...');
     agentPopout.style.display = 'block';
     agentNameInput.value = '';
     agentPersonalityInput.value = '';
@@ -126,8 +134,9 @@ function createNewAgent() {
     const name = agentNameInput.value.trim();
     const personality = agentPersonalityInput.value.trim();
     const avatar = agentAvatarSelect.value;
+    console.log(`Tentando criar agente: Nome=${name}, Personalidade=${personality}, Avatar=${avatar}`);
     if (!name || !personality) {
-        alert('Por favor, preencha o nome e a personalidade do agente.');
+        alert('Por favor, preencha o nome e a personalidade do amiguinho!');
         return;
     }
     const newAgentRef = agentsRef.push();
@@ -136,20 +145,30 @@ function createNewAgent() {
         name: name,
         personality: personality,
         avatar: avatar,
-        learnedContent: '' // Inicializa com conhecimento vazio
+        learnedContent: ''
+    }).then(() => {
+        console.log(`Agente criado com sucesso: ID=${agentId}`);
+        agentPopout.style.display = 'none';
+        openAgentChat(agentId);
+    }).catch((error) => {
+        console.error('Erro ao criar agente:', error);
+        alert('Ops! Não consegui criar o amiguinho. Tente novamente!');
     });
-    agentPopout.style.display = 'none';
-    openAgentChat(agentId);
 }
 
 // Cancelar criação de agente
 function cancelAgentCreation() {
+    console.log('Cancelando criação de agente...');
     agentPopout.style.display = 'none';
 }
 
 // Abrir o popout para editar agente
 function openEditAgentPopout() {
-    if (!currentAgentId) return;
+    if (!currentAgentId) {
+        console.log('Nenhum agente selecionado para edição.');
+        return;
+    }
+    console.log(`Abrindo edição do agente: ID=${currentAgentId}`);
     agentsRef.child(currentAgentId).once('value', (snapshot) => {
         const agentData = snapshot.val();
         if (agentData) {
@@ -158,7 +177,11 @@ function openEditAgentPopout() {
             editAgentAvatarSelect.value = agentData.avatar || '🤖';
             editAgentPopout.style.display = 'block';
             toolsMenu.style.display = 'none';
+            console.log('Popout de edição aberto com sucesso.');
         }
+    }).catch((error) => {
+        console.error('Erro ao abrir edição:', error);
+        alert('Não consegui carregar os dados do amiguinho para edição!');
     });
 }
 
@@ -167,8 +190,9 @@ function saveAgentEdits() {
     const name = editAgentNameInput.value.trim();
     const personality = editAgentPersonalityInput.value.trim();
     const avatar = editAgentAvatarSelect.value;
+    console.log(`Salvando edição: Nome=${name}, Personalidade=${personality}, Avatar=${avatar}`);
     if (!name || !personality) {
-        alert('Por favor, preencha o nome e a personalidade do agente.');
+        alert('Por favor, preencha o nome e a personalidade do amiguinho!');
         return;
     }
     agentsRef.child(currentAgentId).update({
@@ -179,31 +203,53 @@ function saveAgentEdits() {
         agentTitle.textContent = name;
         agentAvatarDisplay.textContent = avatar;
         editAgentPopout.style.display = 'none';
+        console.log('Edição salva com sucesso.');
+    }).catch((error) => {
+        console.error('Erro ao salvar edição:', error);
+        alert('Ops! Não consegui salvar as mudanças do amiguinho!');
     });
 }
 
 // Cancelar edição do agente
 function cancelEditAgent() {
+    console.log('Cancelando edição de agente...');
     editAgentPopout.style.display = 'none';
 }
 
 // Abrir chat com um agente existente
 function openAgentChat(agentId) {
+    console.log(`Tentando abrir chat do agente: ID=${agentId}`);
+    if (!agentId) {
+        alert('Ops! Não sei qual amiguinho abrir!');
+        console.error('ID do agente não fornecido.');
+        return;
+    }
     currentChatRef = agentsRef.child(agentId).child('messages');
     currentAgentId = agentId;
     chatMessages.innerHTML = '';
     agentsRef.child(agentId).once('value', (snapshot) => {
         const agentData = snapshot.val();
-        agentTitle.textContent = agentData.name || `Agente ${agentId}`;
-        agentAvatarDisplay.textContent = agentData.avatar || '🤖';
+        if (agentData) {
+            console.log(`Dados do agente carregados: Nome=${agentData.name}, Avatar=${agentData.avatar}`);
+            agentTitle.textContent = agentData.name || `Amiguinho ${agentId}`;
+            agentAvatarDisplay.textContent = agentData.avatar || '🤖';
+            agentsScreen.style.display = 'none';
+            chatScreen.style.display = 'flex';
+            loadAgentMessages();
+            console.log('Chat aberto com sucesso.');
+        } else {
+            console.error('Dados do agente não encontrados no Firebase.');
+            alert('Não encontrei esse amiguinho!');
+        }
+    }).catch((error) => {
+        console.error('Erro ao abrir chat:', error);
+        alert('Erro ao abrir o chat do amiguinho! Verifique sua conexão.');
     });
-    agentsScreen.style.display = 'none';
-    chatScreen.style.display = 'flex';
-    loadAgentMessages();
 }
 
 // Voltar para a tela de agentes
 function backToAgents() {
+    console.log('Voltando para a tela de agentes...');
     if (currentChatRef) {
         currentChatRef.off('child_added');
     }
@@ -214,94 +260,111 @@ function backToAgents() {
 
 // Carregar mensagens do agente atual
 function loadAgentMessages() {
-    if (!currentChatRef) return;
+    if (!currentChatRef) {
+        console.error('Nenhuma referência de chat atual.');
+        return;
+    }
+    console.log('Carregando mensagens do chat...');
     currentChatRef.off('child_added');
     currentChatRef.once('value', (snapshot) => {
         chatMessages.innerHTML = '';
         if (snapshot.exists()) {
+            console.log('Mensagens encontradas:', snapshot.val());
             snapshot.forEach((childSnapshot) => {
                 const message = childSnapshot.val();
                 if (message && message.text) {
                     displayMessage(message.text, message.type);
                 }
             });
+        } else {
+            console.log('Nenhuma mensagem encontrada para este agente.');
         }
+    }).catch((error) => {
+        console.error('Erro ao carregar mensagens:', error);
     });
     currentChatRef.on('child_added', (snapshot) => {
         const message = snapshot.val();
         if (message && message.text) {
             displayMessage(message.text, message.type);
         }
+    }, (error) => {
+        console.error('Erro ao escutar mensagens:', error);
     });
 }
 
 // Editar o agente
 function editAgent() {
+    console.log('Iniciando edição do agente...');
     openEditAgentPopout();
 }
 
 // Deletar o agente
 function deleteAgent() {
-    if (confirm('Tem certeza que deseja deletar este agente? Essa ação não pode ser desfeita.') && currentChatRef) {
+    console.log('Tentando deletar agente...');
+    if (confirm('Tem certeza que quer apagar esse amiguinho? Ele vai ficar triste!') && currentChatRef) {
         agentsRef.child(currentAgentId).remove().then(() => {
+            console.log('Agente deletado com sucesso.');
             backToAgents();
+        }).catch((error) => {
+            console.error('Erro ao deletar agente:', error);
+            alert('Ops! Não consegui apagar o amiguinho!');
         });
     }
 }
 
 // Alternar visibilidade do menu de ferramentas
 function toggleToolsMenu() {
+    console.log('Alternando menu de ferramentas...');
     toolsMenu.style.display = toolsMenu.style.display === 'block' ? 'none' : 'block';
 }
 
 // Função para extrair conteúdo completo de um site usando Jina Reader
 async function extractContentFromLink(url) {
+    console.log(`Extraindo conteúdo de: ${url}`);
     try {
         const response = await fetch(`https://r.jina.ai/${url}`);
         if (!response.ok) throw new Error('Erro ao acessar o link via Jina Reader');
-        return await response.text(); // Retorna o conteúdo completo
+        const content = await response.text();
+        console.log(`Conteúdo extraído com sucesso de ${url}`);
+        return content;
     } catch (error) {
+        console.error('Erro ao extrair conteúdo:', error);
         return `Não consegui acessar o conteúdo completo de ${url}. Pode ser uma restrição do site ou um erro na API de extração.`;
     }
 }
 
-// Enviar mensagem para o Gemini API com personalidade avançada e aprendizado persistente
+// Enviar mensagem para o Gemini API com personalidade e aprendizado
 async function sendMessageToAI(message) {
     return new Promise(async (resolve, reject) => {
         if (!currentChatRef) {
-            reject(new Error('Nenhum agente selecionado'));
+            console.error('Nenhum chat atual para enviar mensagem.');
+            reject(new Error('Nenhum amiguinho selecionado'));
             return;
         }
 
-        // Exibir "Pensando..." inicialmente
+        console.log(`Enviando mensagem: ${message}`);
         let thinkingMessage = displayMessage('Pensando...', 'ai', true);
 
         agentsRef.child(currentAgentId).once('value', async (agentSnapshot) => {
             const agentData = agentSnapshot.val();
-            const personality = agentData.personality || 'Neutro';
+            const personality = agentData.personality || 'Alegre';
             let learnedContent = agentData.learnedContent || '';
 
-            // Detectar URLs na mensagem usando regex
             const urlRegex = /(https?:\/\/[^\s]+)/g;
             const urls = message.match(urlRegex) || [];
 
-            // Extrair e aprender conteúdo de cada URL encontrado
             if (urls.length > 0) {
                 removeStatusMessage(thinkingMessage);
                 for (const url of urls) {
-                    // Exibir "Pesquisando..."
                     const researchingMessage = displayMessage(`Pesquisando ${url}...`, 'ai', true);
                     const content = await extractContentFromLink(url);
                     removeStatusMessage(researchingMessage);
 
-                    // Exibir "Aprendendo..."
                     const learningMessage = displayMessage(`Aprendendo com ${url}...`, 'ai', true);
                     learnedContent += `\nConteúdo aprendido de ${url} em ${new Date().toISOString()}:\n${content}\n`;
-                    // Salvar o aprendizado no Firebase
                     await agentsRef.child(currentAgentId).update({ learnedContent });
                     removeStatusMessage(learningMessage);
                 }
-                // Re-exibir "Pensando..." após processar links
                 thinkingMessage = displayMessage('Pensando...', 'ai', true);
             }
 
@@ -310,7 +373,7 @@ async function sendMessageToAI(message) {
                     {
                         role: 'user',
                         parts: [{
-                            text: `Você é um agente AI chamado ${agentData.name || 'Agente'} com a personalidade definida como: ${personality}. Use Markdown para formatar blocos de código entre \`\`\` (ex.: \`\`\`código\`\`\`), negrito com ** (ex.: **texto**), e itálico com * (ex.: *texto*), mantendo o resto do texto como texto normal sem formatação adicional. Certifique-se de que os símbolos Markdown sejam retornados exatamente como \`\`\`, ** e * sem escaping ou alterações. Você aprendeu o seguinte conteúdo de sites visitados: ${learnedContent || 'Nenhum conteúdo aprendido ainda.'}. Use esse conhecimento e sua personalidade para responder a todas as mensagens de forma consistente, como um especialista em tudo que você aprendeu.`
+                            text: `Você é um amiguinho de IA do "AIminhos Mágicos" chamado ${agentData.name || 'Amiguinho'} com a personalidade definida como: ${personality}. Use Markdown para formatar blocos de código entre \`\`\` (ex.: \`\`\`código\`\`\`), negrito com ** (ex.: **texto**), e itálico com * (ex.: *texto*), mantendo o resto do texto normal. Certifique-se de que os símbolos Markdown sejam retornados exatamente como \`\`\`, ** e * sem escaping. Você aprendeu o seguinte conteúdo: ${learnedContent || 'Nenhum conteúdo aprendido ainda.'}. Use esse conhecimento e sua personalidade para responder de forma divertida e amigável!`
                         }]
                     }
                 ];
@@ -344,11 +407,13 @@ async function sendMessageToAI(message) {
                     }
                     removeStatusMessage(thinkingMessage);
                     resolve(data.candidates[0].content.parts[0].text);
+                    console.log('Resposta da IA recebida com sucesso.');
                 } catch (error) {
+                    console.error('Erro ao enviar mensagem para a IA:', error);
                     removeStatusMessage(thinkingMessage);
                     reject(error);
                 } finally {
-                    typingIndicator.style.display = 'none'; // Esconde o indicador de digitação
+                    typingIndicator.style.display = 'none';
                 }
             });
         });
@@ -358,7 +423,10 @@ async function sendMessageToAI(message) {
 // Manipular envio de mensagem
 async function handleSendMessage() {
     const message = messageInput.value.trim();
-    if (!message || !currentChatRef) return;
+    if (!message || !currentChatRef) {
+        console.log('Nenhuma mensagem ou chat atual para enviar.');
+        return;
+    }
 
     messageInput.value = '';
     await currentChatRef.push({ text: message, type: 'user' });
@@ -367,8 +435,9 @@ async function handleSendMessage() {
         const aiResponse = await sendMessageToAI(message);
         await currentChatRef.push({ text: aiResponse, type: 'ai' });
     } catch (error) {
-        displayMessage('Erro: Não foi possível obter resposta da IA.', 'ai');
-        typingIndicator.style.display = 'none'; // Esconde o indicador em caso de erro
+        displayMessage('Erro: Não consegui responder, amiguinho!', 'ai');
+        typingIndicator.style.display = 'none';
+        console.error('Erro ao enviar mensagem:', error);
     }
 }
 
@@ -391,4 +460,5 @@ saveAgentBtn.addEventListener('click', saveAgentEdits);
 cancelEditAgentBtn.addEventListener('click', cancelEditAgent);
 
 // Carregar grade de agentes ao iniciar
+console.log('Iniciando aplicação...');
 loadAgents();
